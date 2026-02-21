@@ -1,0 +1,178 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+body {
+  background: #0b1120;
+  color: #e5e7eb;
+  min-height: 100vh;
+}
+
+.header {
+  padding: 1rem;
+  text-align: center;
+  background: #020617;
+  border-bottom: 1px solid #1f2937;
+}
+
+.header h1 {
+  font-size: 1.3rem;
+}
+
+.tabs {
+  display: flex;
+  border-bottom: 1px solid #1f2937;
+}
+
+.tab-button {
+  flex: 1;
+  padding: 0.7rem;
+  border: none;
+  background: #020617;
+  color: #9ca3af;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.tab-button.active {
+  background: #111827;
+  color: #f9fafb;
+  border-bottom: 2px solid #22c55e;
+}
+
+main {
+  padding: 1rem;
+}
+
+.tab {
+  display: none;
+}
+
+.tab.active {
+  display: block;
+}
+
+h2 {
+  font-size: 1.1rem;
+  margin-bottom: 0.8rem;
+}
+
+h3 {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.field {
+  margin-bottom: 0.8rem;
+}
+
+.field-inline {
+  display: flex;
+  gap: 0.8rem;
+}
+
+label {
+  display: block;
+  font-size: 0.8rem;
+  margin-bottom: 0.2rem;
+  color: #9ca3af;
+}
+
+input[type="date"],
+input[type="time"],
+input[type="number"],
+input[type="file"] {
+  width: 100%;
+  padding: 0.5rem;
+  border-radius: 0.4rem;
+  border: 1px solid #374151;
+  background: #020617;
+  color: #f9fafb;
+  font-size: 0.9rem;
+}
+
+input:focus {
+  outline: none;
+  border-color: #22c55e;
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 0.7rem;
+  margin-top: 0.6rem;
+  border-radius: 0.4rem;
+  border: none;
+  background: #22c55e;
+  color: #022c22;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.btn-primary:active {
+  background: #16a34a;
+}
+
+.big-btn {
+  font-size: 1.1rem;
+}
+
+.stop-btn {
+  background: #f97316;
+  color: #111827;
+}
+
+.stop-btn:active {
+  background: #ea580c;
+}
+
+.card {
+  margin-top: 1rem;
+  padding: 0.8rem;
+  border-radius: 0.6rem;
+  background: #020617;
+  border: 1px solid #1f2937;
+}
+
+.hidden {
+  display: none;
+}
+
+.muted {
+  color: #6b7280;
+}
+
+.small {
+  font-size: 0.8rem;
+}
+
+.divider {
+  margin: 1rem 0;
+  border: 0;
+  border-top: 1px solid #1f2937;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.8rem;
+  font-size: 0.85rem;
+}
+
+th,
+td {
+  padding: 0.4rem 0.3rem;
+  border-bottom: 1px solid #1f2937;
+}
+
+th {
+  text-align: left;
+  color: #9ca3af;
+}
+
+tbody tr:nth-child(even) {
+  background: #020617;
+}

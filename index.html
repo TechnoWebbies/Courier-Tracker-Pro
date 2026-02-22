@@ -1,149 +1,196 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8" />
-  <title>Courier Tracker Pro</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8" />
+    <title>Courier Tracker Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#111827" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="apple-touch-icon" href="icon-192.png" />
+    <link rel="manifest" href="manifest.json" />
+    <meta name="theme-color" content="#111827" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="apple-touch-icon" href="icon-192.png" />
 
-  <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css" />
 </head>
+
 <body>
-  <header class="header">
-    <h1>Courier Tracker Pro</h1>
-  </header>
+    <header class="header">
+        <h1>Courier Tracker Pro</h1>
+    </header>
 
-  <nav class="tabs">
-    <button class="tab-button active" data-tab="today">Today</button>
-    <button class="tab-button" data-tab="days">Days</button>
-    <button class="tab-button" data-tab="sessions">Sessions</button>
-    <button class="tab-button" data-tab="settings">Settings</button>
-  </nav>
+    <nav class="tabs">
+        <button class="tab-button active" data-tab="today">Today</button>
+        <button class="tab-button" data-tab="days">Days</button>
+        <button class="tab-button" data-tab="sessions">Sessions</button>
+        <button class="tab-button" data-tab="settings">Settings</button>
+    </nav>
 
-  <main>
-    <!-- TODAY TAB -->
-    <section id="today" class="tab active">
-      <h2>Today</h2>
+    <main>
+        <!-- TODAY TAB -->
+        <section id="today" class="tab active">
+            <h2>Today</h2>
 
-      <div id="session-control" class="card">
-        <div id="no-session">
-          <p class="muted small">No active session.</p>
-          <button id="start-btn" class="btn-primary big-btn">START</button>
-        </div>
+            <div id="session-control" class="card">
+                <div id="no-session">
+                    <p class="muted small">No active session.</p>
+                    <button id="start-btn" class="btn-primary big-btn">START</button>
+                </div>
 
-        <div id="active-session" class="hidden">
-          <p><strong>Active since:</strong> <span id="active-start"></span></p>
-          <p class="muted small">When you finish this driving period, press Stop.</p>
-          <button id="stop-btn" class="btn-primary big-btn stop-btn">STOP</button>
-        </div>
-      </div>
-
-      <!-- Session details after stop -->
-      <div id="session-details-card" class="card hidden">
-        <h3>Session details</h3>
-        <form id="session-form">
-          <p class="muted small">
-            Fill only for this driving period (between Start and Stop).
-          </p>
-          <div class="field-inline">
-            <div class="field">
-              <label for="sess-earnings">Wolt earnings (€)</label>
-              <input type="number" id="sess-earnings" min="0" step="0.01" required />
+                <div id="active-session" class="hidden">
+                    <p><strong>Active since:</strong> <span id="active-start"></span></p>
+                    <p class="muted small">When you finish this driving period, press Stop.</p>
+                    <button id="stop-btn" class="btn-primary big-btn stop-btn">STOP</button>
+                </div>
             </div>
-            <div class="field">
-              <label for="sess-orders">Orders</label>
-              <input type="number" id="sess-orders" min="0" step="1" required />
+
+            <!-- Session details after stop -->
+            <div id="session-details-card" class="card hidden">
+                <h3>Session details</h3>
+                <form id="session-form">
+                    <p class="muted small">
+                        Fill only for this driving period (between Start and Stop).
+                    </p>
+                    <div class="field-inline">
+                        <div class="field">
+                            <label for="sess-earnings">Wolt earnings (€)</label>
+                            <input type="number" id="sess-earnings" min="0" step="0.01" required />
+                        </div>
+                        <div class="field">
+                            <label for="sess-orders">Orders</label>
+                            <input type="number" id="sess-orders" min="0" step="1" required />
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="sess-distance">Distance (km)</label>
+                        <input type="number" id="sess-distance" min="0" step="0.1" required />
+                    </div>
+
+                    <button type="submit" class="btn-primary">Save session</button>
+                </form>
             </div>
-          </div>
 
-          <div class="field">
-            <label for="sess-distance">Distance (km)</label>
-            <input type="number" id="sess-distance" min="0" step="0.1" required />
-          </div>
+            <!-- Today summary -->
+            <div id="today-summary" class="card">
+                <h3>Today summary</h3>
+                <p><strong>Date:</strong> <span id="today-date"></span></p>
+                <p><strong>Total hours:</strong> <span id="today-hours"></span></p>
+                <p><strong>Total orders:</strong> <span id="today-orders"></span></p>
+                <p><strong>Gross earnings:</strong> <span id="today-gross"></span></p>
+                <p><strong>Fuel cost:</strong> <span id="today-fuel"></span></p>
+                <p><strong>Net earnings:</strong> <span id="today-net"></span></p>
+                <p><strong>Real hourly:</strong> <span id="today-hourly"></span></p>
+            </div>
+        </section>
 
-          <button type="submit" class="btn-primary">Save session</button>
-        </form>
-      </div>
+        <!-- DAYS TAB -->
+        <section id="days" class="tab">
+            <h2>Days</h2>
+            <div id="days-empty" class="muted">No sessions yet.</div>
+            <table id="days-table" class="hidden">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Hours</th>
+                        <th>Orders</th>
+                        <th>Net €</th>
+                        <th>€/h</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="days-body"></tbody>
+            </table>
+        </section>
 
-      <!-- Today summary -->
-      <div id="today-summary" class="card">
-        <h3>Today summary</h3>
-        <p><strong>Date:</strong> <span id="today-date"></span></p>
-        <p><strong>Total hours:</strong> <span id="today-hours"></span></p>
-        <p><strong>Total orders:</strong> <span id="today-orders"></span></p>
-        <p><strong>Gross earnings:</strong> <span id="today-gross"></span></p>
-        <p><strong>Fuel cost:</strong> <span id="today-fuel"></span></p>
-        <p><strong>Net earnings:</strong> <span id="today-net"></span></p>
-        <p><strong>Real hourly:</strong> <span id="today-hourly"></span></p>
-      </div>
-    </section>
+        <!-- SESSIONS TAB -->
+        <table id="sessions-table" class="hidden">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Orders</th>
+                    <th>Gross €</th>
+                    <th>Hours</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="sessions-body"></tbody>
+        </table>
 
-    <!-- DAYS TAB -->
-    <section id="days" class="tab">
-      <h2>Days</h2>
-      <div id="days-empty" class="muted">No sessions yet.</div>
-      <table id="days-table" class="hidden">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Hours</th>
-            <th>Orders</th>
-            <th>Net €</th>
-            <th>€/h</th>
-          </tr>
-        </thead>
-        <tbody id="days-body"></tbody>
-      </table>
-    </section>
+        <div id="session-edit-modal" class="card hidden">
+            <h3>Edit session</h3>
+            <form id="session-edit-form">
+                <input type="hidden" id="edit-id" />
 
-    <!-- SESSIONS TAB -->
-    <section id="sessions" class="tab">
-      <h2>All sessions</h2>
-      <div id="sessions-empty" class="muted">No sessions yet.</div>
-      <table id="sessions-table" class="hidden">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Time</th>
-            <th>Orders</th>
-            <th>Gross €</th>
-            <th>Hours</th>
-          </tr>
-        </thead>
-        <tbody id="sessions-body"></tbody>
-      </table>
-    </section>
+                <div class="field">
+                    <label for="edit-date">Date</label>
+                    <input type="date" id="edit-date" required />
+                </div>
 
-    <!-- SETTINGS TAB -->
-    <section id="settings" class="tab">
-      <h2>Settings</h2>
-      <form id="settings-form">
-        <div class="field">
-          <label for="fuelCost">Fuel cost per km (€)</label>
-          <input type="number" id="fuelCost" min="0" step="0.01" required />
+                <div class="field-inline">
+                    <div class="field">
+                        <label for="edit-startTime">Start time</label>
+                        <input type="time" id="edit-startTime" required />
+                    </div>
+                    <div class="field">
+                        <label for="edit-endTime">End time</label>
+                        <input type="time" id="edit-endTime" required />
+                    </div>
+                </div>
+
+                <div class="field-inline">
+                    <div class="field">
+                        <label for="edit-orders">Orders</label>
+                        <input type="number" id="edit-orders" min="0" step="1" required />
+                    </div>
+                    <div class="field">
+                        <label for="edit-earnings">Wolt earnings (€)</label>
+                        <input type="number" id="edit-earnings" min="0" step="0.01" required />
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="edit-distance">Distance (km)</label>
+                    <input type="number" id="edit-distance" min="0" step="0.1" required />
+                </div>
+
+                <button type="submit" class="btn-primary">Save changes</button>
+                <button type="button" id="edit-cancel" class="btn-primary btn-secondary" style="margin-top:0.4rem;">
+                    Cancel
+                </button>
+            </form>
         </div>
-        <button type="submit" class="btn-primary">Save settings</button>
-        <p class="muted small">
-          Example: if you spend about 0.15 € per km on fuel, enter 0.15.
-        </p>
-      </form>
 
-      <hr class="divider" />
 
-      <h3>Backup & restore</h3>
-      <button id="exportJson" class="btn-primary" type="button">Export data as JSON</button>
-      <input type="file" id="importJson" accept="application/json" />
-      <p class="muted small">
-        Choose a JSON backup file to restore your sessions and settings.
-      </p>
-    </section>
-  </main>
 
-  <script src="app.js"></script>
+        <!-- SETTINGS TAB -->
+        <section id="settings" class="tab">
+            <h2>Settings</h2>
+            <form id="settings-form">
+                <div class="field">
+                    <label for="fuelCost">Fuel cost per km (€)</label>
+                    <input type="number" id="fuelCost" min="0" step="0.01" required />
+                </div>
+                <button type="submit" class="btn-primary">Save settings</button>
+                <p class="muted small">
+                    Example: if you spend about 0.15 € per km on fuel, enter 0.15.
+                </p>
+            </form>
+
+            <hr class="divider" />
+
+            <h3>Backup & restore</h3>
+            <button id="exportJson" class="btn-primary" type="button">Export data as JSON</button>
+            <input type="file" id="importJson" accept="application/json" />
+            <p class="muted small">
+                Choose a JSON backup file to restore your sessions and settings.
+            </p>
+        </section>
+    </main>
+
+    <script src="app.js"></script>
 </body>
+
 </html>

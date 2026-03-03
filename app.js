@@ -30,6 +30,20 @@ function loadSettings() {
   }
 }
 
+let currentSessionsFilterDate = null;
+
+function switchToTab(id) {
+  tabButtons.forEach((b) => b.classList.remove("active"));
+  tabs.forEach((t) => t.classList.remove("active"));
+  const btn = document.querySelector(`.tab-button[data-tab="${id}"]`);
+  const tab = document.getElementById(id);
+  if (btn && tab) {
+    btn.classList.add("active");
+    tab.classList.add("active");
+  }
+}
+
+
 function saveSettings(settings) {
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
 }
@@ -163,7 +177,10 @@ tabButtons.forEach((btn) => {
 
     if (target === "today") renderToday();
     if (target === "days") renderDays();
-    if (target === "sessions") renderSessions();
+    if (target === "sessions") renderSessions(); {
+      currentSessionsFilterDate = null; // manual click = clear filter
+      renderSessions();
+    }
     if (target === "settings") initSettingsForm();
   });
 });
@@ -306,8 +323,8 @@ function renderDays() {
       <td>${d.orders}</td>
       <td>${formatMoney(d.net)}</td>
       <td>${formatMoney(d.hourly)}</td>
-      <td>
-        <button class="btn-small btn-danger" data-date="${d.date}">Delete</button>
+        <button class="btn-small btn-secondary" data-day-edit="${d.date}">Edit</button>
+        <button class="btn-small btn-danger" data-day-delete="${d.date}">Delete</button>
       </td>
     `;
     daysBody.appendChild(tr);
@@ -326,11 +343,28 @@ function renderDays() {
       renderSessions();
     });
   });
+
+  // Edit day = jump to Sessions tab filtered by that date
+   daysBody.querySelectorAll("button[data-day-edit]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const date = btn.getAttribute("data-day-edit");
+      // set a global filter and switch tab
+      currentSessionsFilterDate = date;
+      switchToTab("sessions");
+      renderSessions();
+    });
+  });
 }
 
 // ---------- Sessions tab ----------
 function renderSessions() {
-  const sessions = loadSessions().sort((a, b) => b.id - a.id);
+  let sessions = loadSessions().sort((a, b) => b.id - a.id);
+
+  // optional filter by date when coming from Days "Edit"
+  if (currentSessionsFilterDate) {
+    sessions = sessions.filter((s) => s.date === currentSessionsFilterDate);
+  }
+
   if (!sessions.length) {
     sessionsEmpty.classList.remove("hidden");
     sessionsTable.classList.add("hidden");
@@ -357,77 +391,6 @@ function renderSessions() {
     sessionsBody.appendChild(tr);
   });
 
-  function openSessionEdit(id) {
-  const sessions = loadSessions();
-  const s = sessions.find((x) => x.id === id);
-  if (!s) return;
-
-  editIdInput.value = s.id;
-  editDateInput.value = s.date;
-  editStartTimeInput.value = s.startTime;
-  editEndTimeInput.value = s.endTime;
-  editOrdersInput.value = s.orders;
-  editEarningsInput.value = s.earnings;
-  editDistanceInput.value = s.distanceKm;
-
-  sessionEditModal.classList.remove("hidden");
-}
-
-editCancelBtn.addEventListener("click", () => {
-  sessionEditModal.classList.add("hidden");
-});
-
-sessionEditForm.addEventListener("submit", (e) => {
-  e.preventDefault();
-  const id = Number(editIdInput.value);
-  const settings = loadSettings();
-  const sessions = loadSessions();
-  const index = sessions.findIndex((s) => s.id === id);
-  if (index === -1) {
-    alert("Session not found");
-    return;
-  }
-
-  const date = editDateInput.value;
-  const startTime = editStartTimeInput.value;
-  const endTime = editEndTimeInput.value;
-  const orders = parseInt(editOrdersInput.value || "0", 10);
-  const earnings = parseFloat(editEarningsInput.value || "0");
-  const distanceKm = parseFloat(editDistanceInput.value || "0");
-
-  if (!date || !startTime || !endTime) {
-    alert("Please fill date and times");
-    return;
-  }
-
-  // Rebuild ISO times using the edited date + times
-  const startISO = new Date(`${date}T${startTime}:00`).toISOString();
-  const endISO = new Date(`${date}T${endTime}:00`).toISOString();
-  const hours = calcHoursFromISO(startISO, endISO);
-  const fuelCost = distanceKm * settings.fuelCostPerKm;
-
-  sessions[index] = {
-    ...sessions[index],
-    date,
-    startISO,
-    endISO,
-    startTime,
-    endTime,
-    orders,
-    earnings,
-    distanceKm,
-    hours,
-    fuelCost
-  };
-
-  saveSessions(sessions);
-  sessionEditModal.classList.add("hidden");
-  renderToday();
-  renderDays();
-  renderSessions();
-});
-
-
   // Edit buttons
   sessionsBody.querySelectorAll("button[data-edit]").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -450,6 +413,7 @@ sessionEditForm.addEventListener("submit", (e) => {
     });
   });
 }
+
 
 
 // ---------- Settings + backup ----------
@@ -520,6 +484,77 @@ if (importInput) {
   if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("service-worker.js");
 }
+
+function openSessionEdit(id) {
+  const sessions = loadSessions();
+  const s = sessions.find((x) => x.id === id);
+  if (!s) return;
+
+  editIdInput.value = s.id;
+  editDateInput.value = s.date;
+  editStartTimeInput.value = s.startTime;
+  editEndTimeInput.value = s.endTime;
+  editOrdersInput.value = s.orders;
+  editEarningsInput.value = s.earnings;
+  editDistanceInput.value = s.distanceKm;
+
+  sessionEditModal.classList.remove("hidden");
+}
+
+editCancelBtn.addEventListener("click", () => {
+  sessionEditModal.classList.add("hidden");
+});
+
+sessionEditForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const id = Number(editIdInput.value);
+  const settings = loadSettings();
+  const sessions = loadSessions();
+  const index = sessions.findIndex((s) => s.id === id);
+  if (index === -1) {
+    alert("Session not found");
+    return;
+  }
+
+  const date = editDateInput.value;
+  const startTime = editStartTimeInput.value;
+  const endTime = editEndTimeInput.value;
+  const orders = parseInt(editOrdersInput.value || "0", 10);
+  const earnings = parseFloat(editEarningsInput.value || "0");
+  const distanceKm = parseFloat(editDistanceInput.value || "0");
+
+  if (!date || !startTime || !endTime) {
+    alert("Please fill date and times");
+    return;
+  }
+
+  // rebuild ISO times with edited date + times
+  const startISO = new Date(`${date}T${startTime}:00`).toISOString();
+  const endISO = new Date(`${date}T${endTime}:00`).toISOString();
+  const hours = calcHoursFromISO(startISO, endISO);
+  const fuelCost = distanceKm * settings.fuelCostPerKm;
+
+  sessions[index] = {
+    ...sessions[index],
+    date,
+    startISO,
+    endISO,
+    startTime,
+    endTime,
+    orders,
+    earnings,
+    distanceKm,
+    hours,
+    fuelCost
+  };
+
+  saveSessions(sessions);
+  sessionEditModal.classList.add("hidden");
+  renderToday();
+  renderDays();
+  renderSessions();
+});
+
 
 }
 

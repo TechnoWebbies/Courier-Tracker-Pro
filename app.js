@@ -22,11 +22,31 @@ const defaultSettings = {
 // ---------- helpers for storage ----------
 function loadSettings() {
   const raw = localStorage.getItem(SETTINGS_KEY);
-  if (!raw) return { ...defaultSettings };
+  if (!raw) return {
+    ...defaultSettings
+  };
   try {
-    return { ...defaultSettings, ...JSON.parse(raw) };
+    return {
+      ...defaultSettings,
+      ...JSON.parse(raw)
+    };
   } catch {
-    return { ...defaultSettings };
+    return {
+      ...defaultSettings
+    };
+  }
+}
+
+let currentSessionsFilterDate = null;
+
+function switchToTab(id) {
+  tabButtons.forEach((b) => b.classList.remove("active"));
+  tabs.forEach((t) => t.classList.remove("active"));
+  const btn = document.querySelector(`.tab-button[data-tab="${id}"]`);
+  const tab = document.getElementById(id);
+  if (btn && tab) {
+    btn.classList.add("active");
+    tab.classList.add("active");
   }
 }
 
@@ -163,10 +183,14 @@ tabButtons.forEach((btn) => {
 
     if (target === "today") renderToday();
     if (target === "days") renderDays();
-    if (target === "sessions") renderSessions();
+    if (target === "sessions") {
+      currentSessionsFilterDate = null;
+      renderSessions();
+    }
     if (target === "settings") initSettingsForm();
   });
 });
+
 
 // ---------- Today: Start/Stop ----------
 function updateStartStopUI() {
@@ -301,22 +325,24 @@ function renderDays() {
   days.forEach((d) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${d.date}</td>
-      <td>${d.hours.toFixed(2)} h</td>
-      <td>${d.orders}</td>
-      <td>${formatMoney(d.net)}</td>
-      <td>${formatMoney(d.hourly)}</td>
-      <td>
-        <button class="btn-small btn-danger" data-date="${d.date}">Delete</button>
-      </td>
-    `;
+    <td>${d.date}</td>
+    <td>${d.hours.toFixed(2)} h</td>
+    <td>${d.orders}</td>
+    <td>${formatMoney(d.net)}</td>
+    <td>${formatMoney(d.hourly)}</td>
+    <td>
+      <button class="btn-small btn-secondary" data-day-edit="${d.date}">Edit</button>
+      <button class="btn-small btn-danger" data-day-delete="${d.date}">Delete</button>
+    </td>
+`;
+
     daysBody.appendChild(tr);
   });
 
   // handle delete buttons
-  daysBody.querySelectorAll("button[data-date]").forEach((btn) => {
+  daysBody.querySelectorAll("button[data-day-delete]").forEach((btn) => {
     btn.addEventListener("click", () => {
-      const date = btn.getAttribute("data-date");
+      const date = btn.getAttribute("data-day-delete");
       if (!confirm(`Delete ALL sessions for ${date}?`)) return;
       const all = loadSessions();
       const remaining = all.filter((s) => s.date !== date);
@@ -326,11 +352,29 @@ function renderDays() {
       renderSessions();
     });
   });
+
+
+  // Edit day = jump to Sessions tab filtered by that date
+  daysBody.querySelectorAll("button[data-day-edit]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const date = btn.getAttribute("data-day-edit");
+      // set a global filter and switch tab
+      currentSessionsFilterDate = date;
+      switchToTab("sessions");
+      renderSessions();
+    });
+  });
 }
 
 // ---------- Sessions tab ----------
 function renderSessions() {
-  const sessions = loadSessions().sort((a, b) => b.id - a.id);
+  let sessions = loadSessions().sort((a, b) => b.id - a.id);
+
+  // optional filter by date when coming from Days "Edit"
+  if (currentSessionsFilterDate) {
+    sessions = sessions.filter((s) => s.date === currentSessionsFilterDate);
+  }
+
   if (!sessions.length) {
     sessionsEmpty.classList.remove("hidden");
     sessionsTable.classList.add("hidden");
@@ -357,7 +401,113 @@ function renderSessions() {
     sessionsBody.appendChild(tr);
   });
 
-  function openSessionEdit(id) {
+  // Edit buttons
+  sessionsBody.querySelectorAll("button[data-edit]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = Number(btn.getAttribute("data-edit"));
+      openSessionEdit(id);
+    });
+  });
+
+  // Delete buttons
+  sessionsBody.querySelectorAll("button[data-delete]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = Number(btn.getAttribute("data-delete"));
+      if (!confirm("Delete this session?")) return;
+      const all = loadSessions();
+      const remaining = all.filter((s) => s.id !== id);
+      saveSessions(remaining);
+      renderToday();
+      renderDays();
+      renderSessions();
+    });
+  });
+}
+
+
+
+// ---------- Settings + backup ----------
+function initSettingsForm() {
+  const s = loadSettings();
+  fuelCostInput.value = s.fuelCostPerKm.toString();
+}
+
+settingsForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const fuelCost = parseFloat(fuelCostInput.value || "0");
+  saveSettings({
+    fuelCostPerKm: isNaN(fuelCost) ? 0 : fuelCost
+  });
+  alert("Settings saved");
+});
+
+// Export JSON
+function downloadJSON(data, filename) {
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], {
+    type: "application/json"
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+if (exportBtn) {
+  exportBtn.addEventListener("click", () => {
+    const sessions = loadSessions();
+    const settings = loadSettings();
+    const backup = {
+      sessions,
+      settings,
+      createdAt: new Date().toISOString()
+    };
+    downloadJSON(backup, "courier-tracker-pro-backup.json");
+  });
+}
+
+// Import JSON
+// Import JSON
+if (importInput) {
+  importInput.addEventListener("change", (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      try {
+        const data = JSON.parse(e.target.result);
+        if (!data || !Array.isArray(data.sessions) || !data.settings) {
+          alert("Invalid backup file");
+          return;
+        }
+        saveSessions(data.sessions);
+        saveSettings(data.settings);
+        clearCurrentSession();
+        alert("Backup restored");
+        renderToday();
+        renderDays();
+        renderSessions();
+        initSettingsForm();
+      } catch (err) {
+        console.error(err);
+        alert("Could not read backup file");
+      }
+    };
+    reader.readAsText(file);
+  });
+}
+
+// Service worker registration (optional)
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("service-worker.js");
+}
+
+// ---- session edit helpers (completely outside the importInput if) ----
+function openSessionEdit(id) {
   const sessions = loadSessions();
   const s = sessions.find((x) => x.id === id);
   if (!s) return;
@@ -400,7 +550,6 @@ sessionEditForm.addEventListener("submit", (e) => {
     return;
   }
 
-  // Rebuild ISO times using the edited date + times
   const startISO = new Date(`${date}T${startTime}:00`).toISOString();
   const endISO = new Date(`${date}T${endTime}:00`).toISOString();
   const hours = calcHoursFromISO(startISO, endISO);
@@ -426,102 +575,6 @@ sessionEditForm.addEventListener("submit", (e) => {
   renderDays();
   renderSessions();
 });
-
-
-  // Edit buttons
-  sessionsBody.querySelectorAll("button[data-edit]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const id = Number(btn.getAttribute("data-edit"));
-      openSessionEdit(id);
-    });
-  });
-
-  // Delete buttons
-  sessionsBody.querySelectorAll("button[data-delete]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const id = Number(btn.getAttribute("data-delete"));
-      if (!confirm("Delete this session?")) return;
-      const all = loadSessions();
-      const remaining = all.filter((s) => s.id !== id);
-      saveSessions(remaining);
-      renderToday();
-      renderDays();
-      renderSessions();
-    });
-  });
-}
-
-
-// ---------- Settings + backup ----------
-function initSettingsForm() {
-  const s = loadSettings();
-  fuelCostInput.value = s.fuelCostPerKm.toString();
-}
-
-settingsForm.addEventListener("submit", (e) => {
-  e.preventDefault();
-  const fuelCost = parseFloat(fuelCostInput.value || "0");
-  saveSettings({ fuelCostPerKm: isNaN(fuelCost) ? 0 : fuelCost });
-  alert("Settings saved");
-});
-
-// Export JSON
-function downloadJSON(data, filename) {
-  const json = JSON.stringify(data, null, 2);
-  const blob = new Blob([json], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
-if (exportBtn) {
-  exportBtn.addEventListener("click", () => {
-    const sessions = loadSessions();
-    const settings = loadSettings();
-    const backup = { sessions, settings, createdAt: new Date().toISOString() };
-    downloadJSON(backup, "courier-tracker-pro-backup.json");
-  });
-}
-
-// Import JSON
-if (importInput) {
-  importInput.addEventListener("change", (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function (e) {
-      try {
-        const data = JSON.parse(e.target.result);
-        if (!data || !Array.isArray(data.sessions) || !data.settings) {
-          alert("Invalid backup file");
-          return;
-        }
-        saveSessions(data.sessions);
-        saveSettings(data.settings);
-        clearCurrentSession();
-        alert("Backup restored");
-        renderToday();
-        renderDays();
-        renderSessions();
-        initSettingsForm();
-      } catch (err) {
-        console.error(err);
-        alert("Could not read backup file");
-      }
-    };
-    reader.readAsText(file);
-  });
-
-  if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("service-worker.js");
-}
-
-}
 
 // ---------- init ----------
 initSettingsForm();

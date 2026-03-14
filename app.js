@@ -22,11 +22,18 @@ const defaultSettings = {
 // ---------- helpers for storage ----------
 function loadSettings() {
   const raw = localStorage.getItem(SETTINGS_KEY);
-  if (!raw) return { ...defaultSettings };
+  if (!raw) return {
+    ...defaultSettings
+  };
   try {
-    return { ...defaultSettings, ...JSON.parse(raw) };
+    return {
+      ...defaultSettings,
+      ...JSON.parse(raw)
+    };
   } catch {
-    return { ...defaultSettings };
+    return {
+      ...defaultSettings
+    };
   }
 }
 
@@ -42,7 +49,6 @@ function switchToTab(id) {
     tab.classList.add("active");
   }
 }
-
 
 function saveSettings(settings) {
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
@@ -177,13 +183,14 @@ tabButtons.forEach((btn) => {
 
     if (target === "today") renderToday();
     if (target === "days") renderDays();
-    if (target === "sessions") renderSessions(); {
-      currentSessionsFilterDate = null; // manual click = clear filter
+    if (target === "sessions") {
+      currentSessionsFilterDate = null;
       renderSessions();
     }
     if (target === "settings") initSettingsForm();
   });
 });
+
 
 // ---------- Today: Start/Stop ----------
 function updateStartStopUI() {
@@ -318,22 +325,24 @@ function renderDays() {
   days.forEach((d) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${d.date}</td>
-      <td>${d.hours.toFixed(2)} h</td>
-      <td>${d.orders}</td>
-      <td>${formatMoney(d.net)}</td>
-      <td>${formatMoney(d.hourly)}</td>
-        <button class="btn-small btn-secondary" data-day-edit="${d.date}">Edit</button>
-        <button class="btn-small btn-danger" data-day-delete="${d.date}">Delete</button>
-      </td>
-    `;
+    <td>${d.date}</td>
+    <td>${d.hours.toFixed(2)} h</td>
+    <td>${d.orders}</td>
+    <td>${formatMoney(d.net)}</td>
+    <td>${formatMoney(d.hourly)}</td>
+    <td>
+      <button class="btn-small btn-secondary" data-day-edit="${d.date}">Edit</button>
+      <button class="btn-small btn-danger" data-day-delete="${d.date}">Delete</button>
+    </td>
+`;
+
     daysBody.appendChild(tr);
   });
 
   // handle delete buttons
-  daysBody.querySelectorAll("button[data-date]").forEach((btn) => {
+  daysBody.querySelectorAll("button[data-day-delete]").forEach((btn) => {
     btn.addEventListener("click", () => {
-      const date = btn.getAttribute("data-date");
+      const date = btn.getAttribute("data-day-delete");
       if (!confirm(`Delete ALL sessions for ${date}?`)) return;
       const all = loadSessions();
       const remaining = all.filter((s) => s.date !== date);
@@ -344,8 +353,9 @@ function renderDays() {
     });
   });
 
+
   // Edit day = jump to Sessions tab filtered by that date
-   daysBody.querySelectorAll("button[data-day-edit]").forEach((btn) => {
+  daysBody.querySelectorAll("button[data-day-edit]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const date = btn.getAttribute("data-day-edit");
       // set a global filter and switch tab
@@ -425,14 +435,18 @@ function initSettingsForm() {
 settingsForm.addEventListener("submit", (e) => {
   e.preventDefault();
   const fuelCost = parseFloat(fuelCostInput.value || "0");
-  saveSettings({ fuelCostPerKm: isNaN(fuelCost) ? 0 : fuelCost });
+  saveSettings({
+    fuelCostPerKm: isNaN(fuelCost) ? 0 : fuelCost
+  });
   alert("Settings saved");
 });
 
 // Export JSON
 function downloadJSON(data, filename) {
   const json = JSON.stringify(data, null, 2);
-  const blob = new Blob([json], { type: "application/json" });
+  const blob = new Blob([json], {
+    type: "application/json"
+  });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -447,11 +461,16 @@ if (exportBtn) {
   exportBtn.addEventListener("click", () => {
     const sessions = loadSessions();
     const settings = loadSettings();
-    const backup = { sessions, settings, createdAt: new Date().toISOString() };
+    const backup = {
+      sessions,
+      settings,
+      createdAt: new Date().toISOString()
+    };
     downloadJSON(backup, "courier-tracker-pro-backup.json");
   });
 }
 
+// Import JSON
 // Import JSON
 if (importInput) {
   importInput.addEventListener("change", (event) => {
@@ -480,11 +499,14 @@ if (importInput) {
     };
     reader.readAsText(file);
   });
+}
 
-  if ("serviceWorker" in navigator) {
+// Service worker registration (optional)
+if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("service-worker.js");
 }
 
+// ---- session edit helpers (completely outside the importInput if) ----
 function openSessionEdit(id) {
   const sessions = loadSessions();
   const s = sessions.find((x) => x.id === id);
@@ -528,7 +550,6 @@ sessionEditForm.addEventListener("submit", (e) => {
     return;
   }
 
-  // rebuild ISO times with edited date + times
   const startISO = new Date(`${date}T${startTime}:00`).toISOString();
   const endISO = new Date(`${date}T${endTime}:00`).toISOString();
   const hours = calcHoursFromISO(startISO, endISO);
@@ -554,9 +575,6 @@ sessionEditForm.addEventListener("submit", (e) => {
   renderDays();
   renderSessions();
 });
-
-
-}
 
 // ---------- init ----------
 initSettingsForm();
